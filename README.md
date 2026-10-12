@@ -56,3 +56,5 @@ This repo is that stack in miniature: **build servers (FastMCP)** + **use them
 
 > 🚧 `weaviate-mcp/` is a vendored **Go** MCP server for the Weaviate vector DB —
 > **WIP, not yet published**, so it's left out of the tour.
+
+[![M8ven Score](https://m8ven.ai/badge/mcp/mpolinowski-mcp-servers-179eo7?v=0ae6390de2478363cb0c766e22ebcb38)](https://m8ven.ai/mcp/mpolinowski-mcp-servers-179eo7?s=readme)
