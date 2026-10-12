@@ -142,7 +142,7 @@ FastMCP derives **everything the agent sees** from the Python function:
 | **return annotation** (`str`, `list[str]`, `list[dict]`, `int`) | the structured-output shape; the agent gets `structured_content` *and* a text rendering |
 | exceptions                          | error results: raise `ToolError(msg)` → the client sees a clean one-line `isError` message; other exceptions → `Error calling tool ...` |
 
-Two practical details from this codebase worth copying into your own server:
+Three practical details from this codebase worth copying into your own server:
 
 1. **The docstring is your product feature.** The `edit_document`/
    `create_document` docstrings end with an "ALWAYS WRITE IN BATCHES" policy —
@@ -153,6 +153,13 @@ Two practical details from this codebase worth copying into your own server:
 2. **Convert domain errors to `ToolError`** in the thin wrapper (here the
    `_call` helper), so the agent gets `editing is not enabled on this server
    (start file-access with --allow-edit)` instead of a Python traceback.
+3. **Declare the tool hints.** Each `@mcp.tool(annotations=…)` sets all four MCP
+   hints explicitly so a host always knows what it's about to do: `read_only_hint`
+   (`true` for the six read tools), `destructive_hint` (`true` for
+   `edit_document`/`delete_document`), `idempotent_hint`, and `open_world_hint`
+   (`false` — this server only touches the local tree). The MCP spec treats these
+   as *hints, not guarantees*, but setting them honestly lets a cautious client
+   confirm before a destructive call.
 
 The **server instructions** (`instructions=` in the `FastMCP(...)` call, built
 by `describe_capabilities()`) are advertised at MCP `initialize` time — use

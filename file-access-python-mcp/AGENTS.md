@@ -47,6 +47,17 @@ Nine tools, all names/parameters below are load-bearing (asserted in `testing.py
 | `create_document` | `rel_path, text` | Creates parents; must fail on existing path. |
 | `delete_document` | `rel_path` | File only (never a directory). |
 
+Every tool also declares the four MCP **tool hints** (`read_only_hint`,
+`destructive_hint`, `idempotent_hint`, `open_world_hint`) via
+`@mcp.tool(annotations=_)`. Per the MCP spec these are *hints, not guarantees*;
+a client may use them to warn the user before invoking. Set all four explicitly
+on each tool to match its real behaviour — read tools are `read_only/
+idempotent/non-destructive`, `edit_document` and `delete_document` are
+destructive, `create_document` is additive — and keep `open_world_hint=False`
+(this server only touches the local tree). These are metadata, so they don't
+change tool names/params and `testing.py` doesn't assert them, but keep them in
+sync if you add or change a tool's semantics.
+
 Hard invariants — breaking any of these breaks the security/correctness model:
 
 1. **Containment**: reject absolute paths, `..` parts, anything resolving outside the root, and

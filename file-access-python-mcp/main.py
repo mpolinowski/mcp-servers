@@ -260,6 +260,40 @@ def _call(store_method, *args):
         raise ToolError(str(exc)) from exc
 
 
+# ---------------------------------------------------------------------------
+# Tool annotations — MCP "hints" declaring each tool's real behaviour
+# ---------------------------------------------------------------------------
+# The MCP spec treats these as *hints* (not guarantees): a host/client may use
+# them to warn the user before invoking (e.g. "this is destructive"). All four
+# are set explicitly on every tool so a client always gets a full, unambiguous
+# picture. This server only ever touches the local document tree, so
+# open_world_hint is False everywhere.
+_READ = {
+    "read_only_hint": True,
+    "destructive_hint": False,
+    "idempotent_hint": True,
+    "open_world_hint": False,
+}
+_EDIT = {
+    "read_only_hint": False,
+    "destructive_hint": True,    # replaces existing text (not reversible)
+    "idempotent_hint": False,    # a repeat either fails or double-applies
+    "open_world_hint": False,
+}
+_CREATE = {
+    "read_only_hint": False,
+    "destructive_hint": False,   # additive; refuses to clobber an existing doc
+    "idempotent_hint": False,    # a repeat errors ("already exists")
+    "open_world_hint": False,
+}
+_DELETE = {
+    "read_only_hint": False,
+    "destructive_hint": True,    # irreversible
+    "idempotent_hint": False,    # a second call errors ("no such document")
+    "open_world_hint": False,
+}
+
+
 def describe_capabilities(store: DocumentStore) -> str:
     """Describe this instance's write capabilities, for the client's LLM.
 
@@ -284,7 +318,7 @@ def build_server(store: DocumentStore) -> FastMCP:
     """Create the FastMCP server with the file-access tools bound to store."""
     mcp = FastMCP("file-access", instructions=describe_capabilities(store))
 
-    @mcp.tool()
+    @mcp.tool(annotations=_READ)
     def search_documents(query: str, max_results: int = 20, case_sensitive: bool = False) -> list[dict]:
         """Search all served documents (recursively) for an exact substring.
 
@@ -296,39 +330,39 @@ def build_server(store: DocumentStore) -> FastMCP:
         """
         return _call(store.search, query, max_results, case_sensitive)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_READ)
     def list_all_documents() -> list[str]:
         """List the relative paths of all served documents (recursively, hidden
         files included, non-UTF-8 files excluded), sorted by rel_path.
         Equivalent to glob("**/*")."""
         return _call(store.list_all)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_READ)
     def glob(path_str: str) -> list[str]:
         """Return the relative paths of served documents matching a wildcard
         pattern like '*.txt' or '**/*.txt', sorted by rel_path."""
         return _call(store.glob, path_str)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_READ)
     def get_document(rel_path: str) -> str:
         """Return the full text content of the document at rel_path, which must
         be strictly relative to the served directory (absolute paths and paths
         containing '..' are rejected)."""
         return _call(store.get, rel_path)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_READ)
     def get_document_length(rel_path: str) -> int:
         """Return the length of the document at rel_path in characters (not bytes)."""
         return _call(store.length, rel_path)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_READ)
     def get_document_partial(rel_path: str, offset: int, length: int) -> str:
         """Return up to `length` characters of the document at rel_path, starting
         at character `offset`. offset must be in [0, document length] and
         offset+length must not exceed the document length."""
         return _call(store.partial, rel_path, offset, length)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_EDIT)
     def edit_document(rel_path: str, to_replace: str, replace_with: str, offset: int) -> str:
         """Replace one exact occurrence in the document at rel_path: to_replace
         must begin at character offset and is replaced by replace_with. An empty
@@ -344,7 +378,7 @@ def build_server(store: DocumentStore) -> FastMCP:
         """
         return _call(store.edit, rel_path, to_replace, replace_with, offset)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_CREATE)
     def create_document(rel_path: str, text: str) -> str:
         """Create a new document at rel_path with the given text, creating parent
         directories as needed. Fails if the path already exists. Requires create
@@ -358,7 +392,7 @@ def build_server(store: DocumentStore) -> FastMCP:
         """
         return _call(store.create, rel_path, text)
 
-    @mcp.tool()
+    @mcp.tool(annotations=_DELETE)
     def delete_document(rel_path: str) -> str:
         """Delete the document at rel_path (its containing directory is kept).
         Fails if no such document exists. Requires delete permission."""
