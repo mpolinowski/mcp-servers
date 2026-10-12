@@ -32,6 +32,82 @@ mcp = FastMCP(
 
 
 # ---------------------------------------------------------------------------
+# Tool annotations — MCP "hints" declaring each tool's real behaviour
+# ---------------------------------------------------------------------------
+# The MCP spec treats these as *hints* (not guarantees): a host or client may
+# use them to warn a user before invoking a tool. We declare all four on every
+# tool, each value matching what the handler actually does:
+#   read_only_hint    the tool does not modify its environment
+#   destructive_hint  the tool may perform destructive (non-reversible) updates
+#   idempotent_hint   calling it again with the same args has no extra effect
+#   open_world_hint   the tool may touch an "open world" of external entities
+
+# Reading / searching local files — pure reads, safe to repeat, local only.
+_READ_ONLY_LOCAL = {
+    "read_only_hint": True,
+    "destructive_hint": False,
+    "idempotent_hint": True,
+    "open_world_hint": False,
+}
+
+# Executes a program — may mutate, may be destructive, not idempotent, open.
+_EXECUTES = {
+    "read_only_hint": False,
+    "destructive_hint": True,
+    "idempotent_hint": False,
+    "open_world_hint": True,
+}
+
+# write_file — overwrites the file (destructive); the same content is a no-op.
+_WRITES = {
+    "read_only_hint": False,
+    "destructive_hint": True,
+    "idempotent_hint": True,
+    "open_world_hint": False,
+}
+
+# append_file — additive, but repeating it duplicates the content.
+_APPENDS = {
+    "read_only_hint": False,
+    "destructive_hint": False,
+    "idempotent_hint": False,
+    "open_world_hint": False,
+}
+
+# create_folder — mkdir -p; additive and safe to repeat.
+_CREATES_FOLDER = {
+    "read_only_hint": False,
+    "destructive_hint": False,
+    "idempotent_hint": True,
+    "open_world_hint": False,
+}
+
+# delete_file / delete_folder — destructive, not safe to repeat.
+_DELETES = {
+    "read_only_hint": False,
+    "destructive_hint": True,
+    "idempotent_hint": False,
+    "open_world_hint": False,
+}
+
+# copy_file — additive but may clobber an existing destination; safe to repeat.
+_COPIES = {
+    "read_only_hint": False,
+    "destructive_hint": True,
+    "idempotent_hint": True,
+    "open_world_hint": False,
+}
+
+# move_file — may clobber an existing destination; not safe to repeat.
+_MOVES = {
+    "read_only_hint": False,
+    "destructive_hint": True,
+    "idempotent_hint": False,
+    "open_world_hint": False,
+}
+
+
+# ---------------------------------------------------------------------------
 # Internal helper
 # ---------------------------------------------------------------------------
 
@@ -77,19 +153,19 @@ def _run_command(command, use_shell: bool = False) -> str:
 # Shell execution
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
+@mcp.tool(annotations=_EXECUTES)
 def bash(command: str):
     '''This function will execute a bash command and return the output. This function is useful for executing bash commands including creating files and directories'''
     return _run_command(command, use_shell=True)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_EXECUTES)
 def execute_file(file_path: str, args: str = ""):
     '''Use bash to execute a file or script and return the output. Provide any arguments for the file as a space-separated string in args (e.g. args="foo bar").'''
     return _run_command(f"bash {shlex.quote(file_path)} {args}".strip(), use_shell=True)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_EXECUTES)
 def run_python(script: str, args: str = ""):
     '''Execute a Python script using the same interpreter that runs this server and return the output. Provide script arguments as a space-separated string in args (e.g. args="a=b --flag").'''
     return _run_command(f"{shlex.quote(sys.executable)} {shlex.quote(script)} {args}".strip(), use_shell=True)
@@ -99,7 +175,7 @@ def run_python(script: str, args: str = ""):
 # Discovering files
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY_LOCAL)
 def list_directory(path: str = "."):
     '''List the files and subdirectories inside a directory (ls -la). Returns the listing, including hidden files with permissions, size, and modification time.'''
     if not os.path.isdir(path):
@@ -107,7 +183,7 @@ def list_directory(path: str = "."):
     return _run_command(["ls", "-la", "--color=never", path])
 
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY_LOCAL)
 def glob_files(pattern: str, path: str = ".", recursive: bool = True):
     '''Find files by glob pattern (e.g. **/*.py or src/*.js) and return the matching file paths, one per line. Set recursive=False to only match a single directory level.'''
     target = pattern if os.path.isabs(pattern) else os.path.join(os.path.abspath(path), pattern)
@@ -117,7 +193,7 @@ def glob_files(pattern: str, path: str = ".", recursive: bool = True):
     return "\n".join(matches)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY_LOCAL)
 def grep(pattern: str, path: str = ".", include: str = ""):
     '''Search file contents for a regex pattern (like: grep -rn) and return the matching lines with file name and line number. Optionally restrict the search to files whose names match an include glob (e.g. include="*.py").'''
     command = ["grep", "-rn"]
@@ -143,7 +219,7 @@ def grep(pattern: str, path: str = ".", include: str = ""):
 # File contents
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY_LOCAL)
 def read_file(file_path: str):
     '''Read a text file and return its full contents as a string. Use this to view the current contents of a file before editing it.'''
     try:
@@ -157,7 +233,7 @@ def read_file(file_path: str):
         return f"Could not read {file_path}: {err}"
 
 
-@mcp.tool()
+@mcp.tool(annotations=_WRITES)
 def write_file(file_path: str, content: str):
     '''Write contents to a file as text, creating any missing parent directories and overwriting any existing file. Returns a confirmation with how many characters were written.'''
     try:
@@ -171,7 +247,7 @@ def write_file(file_path: str, content: str):
     return f"Wrote {len(content)} characters to {file_path}."
 
 
-@mcp.tool()
+@mcp.tool(annotations=_APPENDS)
 def append_file(file_path: str, content: str):
     '''Append text to the end of a file, creating the file (and any missing parent directories) if it does not exist yet. Returns a confirmation with how many characters were appended.'''
     try:
@@ -189,7 +265,7 @@ def append_file(file_path: str, content: str):
 # Files and folders
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
+@mcp.tool(annotations=_DELETES)
 def delete_file(file_path: str):
     '''Delete (unlink) a file and return a confirmation (rm -v). Refuses to delete a directory; use delete_folder for those. This is destructive and cannot be undone.'''
     if os.path.isdir(file_path):
@@ -197,7 +273,7 @@ def delete_file(file_path: str):
     return _run_command(["rm", "-v", file_path])
 
 
-@mcp.tool()
+@mcp.tool(annotations=_CREATES_FOLDER)
 def create_folder(folder_path: str):
     '''Create a directory (folder), including any missing parent directories (mkdir -p). Returns confirmation of the created path, or a note if it already existed.'''
     if os.path.exists(folder_path) and not os.path.isdir(folder_path):
@@ -208,7 +284,7 @@ def create_folder(folder_path: str):
     return out
 
 
-@mcp.tool()
+@mcp.tool(annotations=_DELETES)
 def delete_folder(folder_path: str):
     '''Recursively delete a directory (folder) and everything inside it (rm -r). This is destructive and cannot be undone. Returns a confirmation.'''
     if not os.path.isdir(folder_path):
@@ -219,19 +295,19 @@ def delete_folder(folder_path: str):
     return out
 
 
-@mcp.tool()
+@mcp.tool(annotations=_COPIES)
 def copy_file(source: str, destination: str):
     '''Copy a file or directory to a new location (cp -r). Returns a confirmation or the error message.'''
     return _run_command(["cp", "-r", source, destination])
 
 
-@mcp.tool()
+@mcp.tool(annotations=_MOVES)
 def move_file(source: str, destination: str):
     '''Rename or move a file or directory to a new location (mv). Returns a confirmation or the error message.'''
     return _run_command(["mv", source, destination])
 
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY_LOCAL)
 def file_info(file_path: str):
     '''Show detailed metadata for a file or directory (stat): size, type, permissions, owner, and modification time. Useful for checking existence without opening the file.'''
     return _run_command(["stat", file_path])
