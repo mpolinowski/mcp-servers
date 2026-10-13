@@ -50,11 +50,22 @@ This repo is that stack in miniature: **build servers (FastMCP)** + **use them
 | **deepdive-mcp** 🔬 | Three parallel scenarios — ① raw `mcp` SDK over `stdio`, ② FastMCP over stdio **+** `streamable-HTTP`, ③ a LangChain MCP-adapter client hitting a community `duckduckgo` server. | The 3 layers of MCP in one place: **SDK server → FastMCP → LangChain client.** The core “what / where / how” playground. |
 | **weather-node-mcp** 🌦️ | Minimal MCP server in **TypeScript** using the official `@modelcontextprotocol` v2 client **+** server and `zod`. One tool (`get-alerts`, US NWS) + one resource, and a demo client. | MCP in the **other language** — and that server *and* client can live in the same folder. |
 | **file-access-python-mcp** 📁 | Production-flavoured FastMCP server: exposes a local folder of text docs as **9 tools** (search / list / glob / get / edit / create / delete) over stdio **and** streamable-HTTP+CORS, with `--allow-*` permission flags. | The **cleanest example here** — a solid template (domain / tools / transport split + e2e tests). Copy this one. |
-| **mcp-server-deployment** 📦 | `agent_terminal_tools`: a FastMCP server of shell & file tools (run command, list, glob, grep, read/write/append/delete/copy/move) packaged as an **installable Python package** (`uv` build + entry point) with tests. | How to turn a server into a **package** others can `pip install` / `uvx`. |
+| **mcp-server-deployment** 📦 | `agent_terminal_tools`: a FastMCP server of shell & file tools (run command, list, glob, grep, read/write/append/delete/copy/move) packaged as an **installable Python package** (`uv` build + entry point); client demos included, test suite still to come. | How to turn a server into a **package** others can `pip install` / `uvx`. |
 | **mcp-server-gateway** 🚪 | A FastMCP **gateway**: one server that `mount(create_proxy(...))`s several upstreams (DuckDuckGo **+** `agent_terminal_tools`) and re-exposes them over streamable-HTTP. | The **aggregate / proxy pattern** — many servers behind a single endpoint. |
 | **mcp-docker-deployment** 🐳 | The gateway above, **containerised**: `python:3.14-slim` + `uv`, pre-installs a `uvx` community server, runs it over streamable-HTTP. | How to **ship** an MCP server as a Docker image. |
 
 > 🚧 `weaviate-mcp/` is a vendored **Go** MCP server for the Weaviate vector DB —
 > **WIP, not yet published**, so it's left out of the tour.
 
+
 [![M8ven Score](https://m8ven.ai/badge/mcp/mpolinowski-mcp-servers-179eo7?v=0ae6390de2478363cb0c766e22ebcb38)](https://m8ven.ai/mcp/mpolinowski-mcp-servers-179eo7?s=readme)
+
+---
+
+## 📜 License & audit
+
+- **Licensed [MIT](LICENSE)** — one repo-root license covers every sub-project.
+- **[SECURITY_AUDIT.md](SECURITY_AUDIT.md)** records a security audit's findings
+  and this repo's verdict on each — including the `grep` "handler mutates" claim,
+  verified against the source and found to be a **false positive**, and the
+  "0/33 tools in tests" claim, which overstates the real (partial) gap.
