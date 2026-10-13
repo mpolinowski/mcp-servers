@@ -21,7 +21,15 @@ function createServer(): McpServer {
             description: 'Get the active weather alerts for a US state',
             inputSchema: z.object({
                 state: z.string().length(2).describe('Two-letter US state code, e.g. CA')
-            })
+            }),
+            // Tool hints — this tool only reads from the NWS API, so read-only
+            // and idempotent, but it reaches an open world (external service).
+            annotations: {
+                readOnlyHint: true,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: true
+            }
         },
         async ({ state }) => {
             const code = state.toUpperCase();
