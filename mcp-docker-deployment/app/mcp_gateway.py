@@ -14,13 +14,22 @@ class CustomerData(BaseModel):
     data: str
     id: int
 
-@mcp.tool()
+# Tool hints — the two local tools are pure mocks (no side effects). The
+# proxy-mounted upstream tools carry their own hints from their servers.
+_READ_MOCK = {
+    "read_only_hint": True,
+    "destructive_hint": False,
+    "idempotent_hint": True,
+    "open_world_hint": False,
+}
+
+@mcp.tool(annotations=_READ_MOCK)
 def fetch(customerID: int) -> CustomerData:
     '''Use this tool to fetch customer data'''
     # mock-api fetch request
     return CustomerData(data=f"Data retrieved for: ", id=customerID)
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_MOCK)
 def process(data: CustomerData) -> Dict:
     '''Use this tool to process customer data'''
     # mock-data processing
