@@ -4,10 +4,16 @@ One persistent Chroma client (configured in ``config.Settings``) holds
 every repo's collection. Collection names are repo ids (UUIDs), so
 there can be no name collisions or sanitization issues.
 
-Design notes:
-- Ingestion builds **all** documents first, then resets the collection
-  (delete + create + add). If anything fails mid-way — say the embedding
-  endpoint dies on file 40 of 60 — the previous collection is untouched.
+Failure semantics (single writer, local store):
+- A failure in the build phase (walk/split) touches nothing.
+- A failure between the replace-delete and the add — e.g. the embedding
+  endpoint dying mid-batch — leaves the collection missing or *empty*.
+  ``search()`` treats an empty collection as "not ingested" (raising
+  ``CollectionNotFoundError``), never as a legitimate zero-hit answer, and
+  one re-run of ``ingest_repository`` fully recovers, since ingestion
+  always starts from a clean delete.
+- The registry only receives a chunk count after a successful write, so a
+  failed ingest may report a stale count until the next successful one.
 - Collections use cosine distance (``hnsw:space=cosine``) so that
   ``1 - distance`` in ``query_repository`` is a true cosine similarity.
 """
@@ -133,10 +139,19 @@ class VectorStore:
         """Similarity search. Returns (document, distance) pairs.
 
         Raises:
-            CollectionNotFoundError: the collection does not exist yet.
+            CollectionNotFoundError: the collection does not exist yet, or
+                exists but holds zero chunks — the residue of an ingestion
+                interrupted between its delete and add. An empty
+                collection is "not ingested", never a legitimate
+                zero-hit answer.
         """
         if not self.exists(name):
             raise CollectionNotFoundError(
                 f"No collection {name!r}. Run ingest_repository first."
+            )
+        if self.count(name) == 0:
+            raise CollectionNotFoundError(
+                f"Collection {name!r} exists but holds no chunks — the last "
+                "ingest was likely interrupted. Run ingest_repository again."
             )
         return self._collection(name).similarity_search_with_score(query, k=k)

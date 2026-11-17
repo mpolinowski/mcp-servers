@@ -19,6 +19,8 @@ from mcp_server_for_code_vector_ingestion.ingestion import (
     language_label,
     make_splitter,
 )
+from mcp_server_for_code_vector_ingestion.query import query_repository
+from mcp_server_for_code_vector_ingestion.vectorstore import CollectionNotFoundError
 
 
 # ---------------------------------------------------------------------------
@@ -164,6 +166,40 @@ def test_ingest_replaces_previous_collection(
     assert second.chunks >= first.chunks
     assert record is not None
     assert record.chunk_count == second.chunks
+
+
+def test_ingest_heals_after_interrupted_run(
+    sample_repo: Path, settings, registry, store
+) -> None:
+    """Simulate a re-ingest that died between the delete and the add
+    (embedding endpoint dropping mid-batch is the realistic trigger). The
+    system must (a) never present the empty residue as a valid zero-hit
+    answer, and (b) fully recover from one re-run — with no manual
+    cleanup, because ingestion always starts from a clean delete."""
+    first = ingest_repository(sample_repo, settings, registry=registry, vector_store=store)
+    record = registry.resolve("SAMPLE_REPO")
+
+    # The interrupted second ingest: collection dropped, zero chunks,
+    # registry still reporting the old count (update happens only on success).
+    store.clear(record.collection_name)
+    assert registry.resolve("SAMPLE_REPO")
+    assert record.chunk_count == first.chunks
+
+    with pytest.raises(CollectionNotFoundError, match="re-run|again|interrupted|no chunks"):
+        query_repository(
+            "SAMPLE_REPO", "redis queue", settings=settings, registry=registry, vector_store=store
+        )
+
+    healed = ingest_repository(sample_repo, settings, registry=registry, vector_store=store)
+    assert healed.chunks == first.chunks
+    assert healed.previous_chunks == 0
+    assert registry.resolve("SAMPLE_REPO").chunk_count == first.chunks
+
+    # and the store is usable again
+    res = query_repository(
+        "SAMPLE_REPO", "redis queue", settings=settings, registry=registry, vector_store=store
+    )
+    assert res.results
 
 
 def test_ingest_empty_repo_raises(settings, registry, store, tmp_path: Path) -> None:

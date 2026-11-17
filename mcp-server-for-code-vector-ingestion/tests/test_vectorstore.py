@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import pytest
 from langchain_core.documents import Document
 
-from mcp_server_for_code_vector_ingestion.vectorstore import VectorStore
+from mcp_server_for_code_vector_ingestion.vectorstore import (
+    CollectionNotFoundError,
+    VectorStore,
+)
 
 
 def test_collection_uses_cosine_space(settings, store: VectorStore) -> None:
@@ -54,6 +58,19 @@ def test_add_documents_migrates_legacy_l2_collection(store: VectorStore) -> None
     meta = store._client.get_collection("legacy-space").metadata or {}
     assert meta.get("hnsw:space") == "cosine"
     assert store.count("legacy-space") == 1  # the stale chunk is gone
+
+
+def test_search_empty_collection_raises_not_ingested(store: VectorStore) -> None:
+    """The residue of an ingestion interrupted between its delete and add
+    is a collection that *exists* but holds zero chunks. Reads must treat
+    that as 'not ingested', not as a legitimate search with zero hits —
+    a caller cannot tell the difference otherwise."""
+    store.clear("interruption")
+    store._client.create_collection("interruption")  # exists, zero chunks
+    assert store.exists("interruption") and store.count("interruption") == 0
+
+    with pytest.raises(CollectionNotFoundError, match="no chunks"):
+        store.search("interruption", "anything at all", k=3)
 
 
 def test_search_distance_is_cosine_distance(store: VectorStore) -> None:
