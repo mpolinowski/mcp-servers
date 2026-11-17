@@ -106,10 +106,19 @@ class VectorStore:
         return int(self._client.get_collection(name).count())
 
     def add_documents(self, name: str, documents: list[Document]) -> int:
-        """Create/replace the collection contents. Returns chunk count."""
+        """Replace the collection and write the new chunks.
+
+        The old collection is deleted first. This is required, not just
+        tidy: ``hnsw:space`` is frozen at creation time, and langchain's
+        Chroma resolves via ``get_or_create_collection`` — on an existing
+        collection the ``hnsw:space=cosine`` metadata is silently ignored
+        and the new chunks are *appended* under fresh (random) IDs.
+        Delete -> create -> add is the only way a re-ingest actually
+        replaces the contents and can pick up a distance-space change.
+        """
         if not documents:
             raise ValueError("Refusing to create an empty collection")
-        self._collections.pop(name, None)  # force fresh Chroma wrapper
+        self.clear(name)  # drop the old collection AND its cached wrapper
         collection = self._collection(name)
         collection.add_documents(documents)
         return self.count(name)

@@ -18,6 +18,44 @@ def test_collection_uses_cosine_space(settings, store: VectorStore) -> None:
     assert metadata.get("hnsw:space") == "cosine"
 
 
+def test_add_documents_replaces_existing_chunks(store: VectorStore) -> None:
+    """Re-ingestion must replace, not append. Chunks get random IDs per
+    add, so Chroma cannot dedupe for us — an existing collection would
+    silently accumulate stale duplicates otherwise."""
+    store.clear("replace-check")
+    store.add_documents(
+        "replace-check", [Document(page_content=f"stale doc {i}") for i in range(4)]
+    )
+    assert store.count("replace-check") == 4
+
+    store.add_documents(
+        "replace-check", [Document(page_content=f"fresh doc {i}") for i in range(3)]
+    )
+    assert store.count("replace-check") == 3
+
+
+def test_add_documents_migrates_legacy_l2_collection(store: VectorStore) -> None:
+    """A collection created before ``hnsw:space`` existed (Chroma's L2
+    default) must be rebuilt on the next write. The distance metric is
+    frozen at creation time, and get_or_create silently keeps the old
+    space — so the legacy chunks must be dropped, not appended to."""
+    store.clear("legacy-space")
+    legacy = store._client.create_collection("legacy-space")
+    legacy.add(
+        ids=["stale"],
+        embeddings=[store._embeddings.embed_query("stale content")],
+        documents=["stale content"],
+    )
+    legacy_meta = store._client.get_collection("legacy-space").metadata or {}
+    assert legacy_meta.get("hnsw:space") != "cosine"  # really is a legacy space
+
+    store.add_documents("legacy-space", [Document(page_content="fresh content")])
+
+    meta = store._client.get_collection("legacy-space").metadata or {}
+    assert meta.get("hnsw:space") == "cosine"
+    assert store.count("legacy-space") == 1  # the stale chunk is gone
+
+
 def test_search_distance_is_cosine_distance(store: VectorStore) -> None:
     """distance == 1 - cos(query, doc), not squared L2 (2 - 2*cos)."""
     emb = store._embeddings
