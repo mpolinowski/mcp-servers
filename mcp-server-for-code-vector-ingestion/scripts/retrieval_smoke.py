@@ -106,7 +106,7 @@ def main(argv: list[str] | None = None) -> int:
         ing = ingest_repository(args.repo, settings, registry=registry)
         record = registry.resolve(ing.repo_name)
         print(f"   {ing.files_ingested} files -> {ing.chunks} chunks "
-              f"(replaced {ing.previous_chunks_replaced})")
+              f"(replaced {ing.previous_chunks})")
         print(f"   collection: {record.collection_name}")
     else:
         record = registry.resolve(scan.repo["repo_name"])
