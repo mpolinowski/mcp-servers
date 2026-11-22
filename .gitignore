@@ -1,16 +1,23 @@
 # Python-generated files
 __pycache__/
+node_modules
 *.py[oc]
 build/
 dist/
 wheels/
 *.egg-info
+*.xcf
+*.html
+
 
 # Virtual environments
 .venv
 
 # node dependencies
-node_modules
+node_modulesabases
+invoice_extractor/src/invoice_extractor/dbs
+
+# dat
 
 
 weaviate-mcp
