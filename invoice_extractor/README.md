@@ -1,8 +1,10 @@
-# invoice-extractor
+# FastMCP Invoice Extractor with Z.ai glm-ocr:q8_0
 
 MCP server + LangChain ReactAgent that extracts invoice data from images using
 the GLM-OCR vision model served locally by Ollama (`http://localhost:11434`).
 No cloud calls.
+
+![MCP Invoice Extractor](./whiteboard.png)
 
 Per source image, **both** passes run unconditionally, in order:
 
