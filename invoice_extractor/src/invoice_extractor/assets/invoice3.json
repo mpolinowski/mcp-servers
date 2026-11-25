@@ -1,0 +1,59 @@
+{
+  "invoice_number": "INV-2026-0465",
+  "invoice_date": "2026-11-21",
+  "due_date": "2026-12-20",
+  "currency": "$",
+  "bill_from": {
+    "name": "Acme Corporation",
+    "address": "123 Business Street\nNew York, NY 10001",
+    "phone": "(555) 123-4567",
+    "email": "billing@acmecorp.com",
+    "contact": ""
+  },
+  "bill_to": {
+    "name": "Another Company Inc.",
+    "address": "25 Shennan Boulevard\nShenzhen, Nanshan 518000",
+    "phone": "",
+    "email": "",
+    "contact": "Peter Lau"
+  },
+  "line_items": [
+    {
+      "description": "Web Development Services",
+      "quantity": 12.0,
+      "unit": "$150.00",
+      "unit_price": 150.0,
+      "amount": 1800.0
+    },
+    {
+      "description": "UI/UX Design",
+      "quantity": 7.0,
+      "unit": "$125.00",
+      "unit_price": 125.0,
+      "amount": 875.0
+    },
+    {
+      "description": "Database Setup",
+      "quantity": 2.0,
+      "unit": "$100.00",
+      "unit_price": 100.0,
+      "amount": 200.0
+    },
+    {
+      "description": "Monthly Hosting",
+      "quantity": 5.0,
+      "unit": "$250.00",
+      "unit_price": 250.0,
+      "amount": 1250.0
+    }
+  ],
+  "subtotal": 4125.0,
+  "tax_rate": 8.5,
+  "tax_amount": 811.75,
+  "total": 4475.63,
+  "payment_terms": "Net 30 days. 1.5% late fee per month on overdue balances.",
+  "payment_methods": [
+    "Bank Transfer: Account #123456789, Routing #987654321"
+  ],
+  "notes": "Thank you for your business!"
+}

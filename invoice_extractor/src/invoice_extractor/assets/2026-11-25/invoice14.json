@@ -1,0 +1,59 @@
+{
+  "invoice_number": "INV-2026-94085",
+  "invoice_date": "2026-11-21",
+  "due_date": "2026-12-20",
+  "currency": "$",
+  "bill_from": {
+    "name": "Peninsula Inc.",
+    "address": "123 Lock Road\nHongkong, Tsim Sha Tsui 464562",
+    "phone": "",
+    "email": "",
+    "contact": ""
+  },
+  "bill_to": {
+    "name": "Peninsula Inc.",
+    "address": "123 Lock Road\nHongkong, Tsim Sha Tsui 464562",
+    "phone": "",
+    "email": "",
+    "contact": ""
+  },
+  "line_items": [
+    {
+      "description": "Web Development Services",
+      "quantity": 153.0,
+      "unit": "",
+      "unit_price": 150.0,
+      "amount": 22950.0
+    },
+    {
+      "description": "UI/UX Design",
+      "quantity": 21.0,
+      "unit": "",
+      "unit_price": 125.0,
+      "amount": 2625.0
+    },
+    {
+      "description": "Database Setup",
+      "quantity": 8.0,
+      "unit": "",
+      "unit_price": 100.0,
+      "amount": 800.0
+    },
+    {
+      "description": "Monthly Hosting",
+      "quantity": 56.0,
+      "unit": "",
+      "unit_price": 250.0,
+      "amount": 14000.0
+    }
+  ],
+  "subtotal": 40375.0,
+  "tax_rate": 8.5,
+  "tax_amount": 3431.88,
+  "total": 43806.88,
+  "payment_terms": "Net 30 days, 1.5% late fee per month on overdue balances.",
+  "payment_methods": [
+    "Bank Transfer: Account #123456789, Routing #987654321"
+  ],
+  "notes": "Thank you for your business!"
+}

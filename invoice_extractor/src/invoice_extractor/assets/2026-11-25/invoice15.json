@@ -1,0 +1,59 @@
+{
+  "invoice_number": "INV-2026-0576",
+  "invoice_date": "2026-11-21",
+  "due_date": "2026-12-20",
+  "currency": "$",
+  "bill_from": {
+    "name": "Chie Yuan Inc.",
+    "address": "144 Queens Road\nHongkong, Central Zone",
+    "phone": "(655) 123-4567",
+    "email": "billing@acmecorporation.com",
+    "contact": ""
+  },
+  "bill_to": {
+    "name": "Murphy King",
+    "address": "Chie Yuan Inc.",
+    "phone": "(655) 123-4567",
+    "email": "billing@acmecorporation.com",
+    "contact": ""
+  },
+  "line_items": [
+    {
+      "description": "Web Development Services",
+      "quantity": 153.0,
+      "unit": "$150.00",
+      "unit_price": 150.0,
+      "amount": 22950.0
+    },
+    {
+      "description": "UI/JX Design",
+      "quantity": 21.0,
+      "unit": "$125.00",
+      "unit_price": 125.0,
+      "amount": 2625.0
+    },
+    {
+      "description": "Database Setup",
+      "quantity": 8.0,
+      "unit": "$100.00",
+      "unit_price": 100.0,
+      "amount": 800.0
+    },
+    {
+      "description": "Monthly Hosting",
+      "quantity": 68.0,
+      "unit": "$250.00",
+      "unit_price": 250.0,
+      "amount": 14000.0
+    }
+  ],
+  "subtotal": 140375.0,
+  "tax_rate": 8.5,
+  "tax_amount": 11096.25,
+  "total": 142016.88,
+  "payment_terms": "Net 20 days, 1.5% into two per month on overdue balance.",
+  "payment_methods": [
+    "Bank Transfer"
+  ],
+  "notes": "Thank you for your business!"
+}
